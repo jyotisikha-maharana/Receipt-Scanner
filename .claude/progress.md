@@ -12,56 +12,65 @@
 |-------|-------------|--------|
 | 1 | Foundation & Infrastructure | ✅ Complete |
 | 2 | AI Receipt Scanning (Gemini) | ✅ Complete (backend) |
-| 3 | Frontend Core | ⬜ Not Started |
+| 3 | Frontend Core | ✅ Complete |
 | 4 | Dashboard & Analytics | ⬜ Not Started |
 | 5 | Advanced Features | ⬜ Not Started |
 | 6 | Polish & Interview Prep | ⬜ Not Started |
 
 ---
 
-## PHASE 1 & 2 — COMPLETE (backend)
+## PHASE 3 — Frontend Core (Complete)
 
-### All server files created and TypeScript compiles clean
+### All client files created, TypeScript compiles clean (0 errors)
 
-**Common layer:**
-- `common/enums/` — ExpenseCategory, ExpenseStatus enums
-- `common/filters/http-exception.filter.ts` — global error handler, consistent `{ success, error }` shape
-- `common/interceptors/transform.interceptor.ts` — wraps all responses in `{ success, data }`
-- `common/dto/` — PaginationDto, ApiResponseDto
+**Types:** `src/types/index.ts` — Expense, Budget, DashboardSummary, enums, PaginatedResponse, ExpenseFilters
 
-**Config:**
-- `config/env.validation.ts` — validates required env vars at startup via class-validator
-- `config/database.config.ts` — TypeORM async config factory from ConfigService
+**Services:**
+- `apiClient.ts` — axios, base URL `/api`, unwraps `{ success, data }` envelope, normalizes errors
+- `expenseService.ts` — getAll (with filters), getOne, create, update, remove, checkDuplicate, exportCsv
+- `receiptService.ts` — scan (multipart POST)
+- `budgetService.ts` — getAll, upsert, remove
+- `dashboardService.ts` — getSummary
 
-**Modules:**
-- `modules/expense/` — Entity, 3 DTOs, Repository (QueryBuilder), Service, Controller, Module
-- `modules/budget/` — Entity, DTO, Service, Controller, Module
-- `modules/receipt/` — GeminiService (retry logic), ReceiptService, Controller, Module
-- `modules/dashboard/` — Service (parallel Promise.all aggregation), Controller, Module
+**Context:** `ToastContext.tsx` — global toast state, 4-second auto-dismiss, `useToast()` hook
 
-**Other:**
-- `database/seeds/seed.ts` — 60 expenses across Jan/Feb/Mar 2026 + 8 budgets
-- `uploads/.gitkeep` — uploads dir tracked in git
-- `package.json` — `"seed"` script added
+**UI Primitives (`components/ui/`):**
+- `Button` — primary/secondary/danger/ghost variants, sm/md/lg sizes, loading spinner
+- `Card`, `CardHeader`, `CardTitle`
+- `Input` — label, error, helperText
+- `Select` — label, error, options array
+- `Badge` — category (colored) + status variants; `ConfidenceBadge` (green/yellow/red %)
+- `Modal` — Escape key, scroll-lock, size variants
+- `Spinner`, `PageSpinner`, `SkeletonRow`
+- `ToastContainer` — renders active toasts bottom-right
+- `EmptyState` — icon + title + optional CTA
 
-**API endpoints:**
-- `GET/POST/PUT/DELETE /api/expenses` + export CSV + duplicate check
-- `GET/PUT/DELETE /api/budgets`
-- `POST /api/receipts/scan` — multipart upload → Gemini AI → expense
-- `GET /api/dashboard?month=YYYY-MM`
+**Layout (`components/layout/`):**
+- `Sidebar` — NavLink active states, Intuit green `#2CA01C`, SmartReceipt logo
+- `Header` — title, subtitle, actions slot
+- `AppShell` — Sidebar + Outlet + ToastContainer
+
+**Utils:** `formatters.ts` — formatCurrency, formatDate, formatMonth, prevMonth, nextMonth, currentMonth, CATEGORY_OPTIONS
+
+**Pages:**
+- `Dashboard.tsx` — placeholder (Phase 4)
+- `Settings.tsx` — placeholder (Phase 5)
+- `Upload.tsx` — **full hero feature**: drag-drop zone → AI scan → review card (editable fields + confidence badges) → confirm/reject → duplicate warning modal
+- `Expenses.tsx` — filterable/searchable table, expandable rows (receipt image + AI confidence), edit modal, delete confirmation, CSV export, pagination
+
+**App.tsx** — BrowserRouter + ToastProvider + 4 routes under AppShell
 
 ---
 
 ## KEY DECISIONS & NOTES
 
-- **Tailwind v4** — `@import "tailwindcss"` in CSS + `@tailwindcss/postcss`. No config file needed.
-- **`isolatedModules` + `emitDecoratorMetadata`** — express `Response` must use `import type` in decorated methods.
-- **Static file serving** — `app.useStaticAssets()` in `main.ts`. No `ServeStaticModule` (avoids conflict).
-- **TypeORM `synchronize: true`** in dev — mention migrations in prod during interview.
-- **Gemini model** — `gemini-2.0-flash` with 3-attempt exponential backoff retry.
-- **uuid v13** — named import `import { v4 as uuidv4 } from 'uuid'` works fine.
-- **Duplicate detection** — fuzzy: same merchant (case-insensitive) + amount ±$0.50 + date ±2 days.
-- **`getMonthlyTrend`** — uses JS-computed `startDate` string instead of SQL INTERVAL (avoids parameterized INTERVAL issue).
+- **Tailwind v4** — `@import "tailwindcss"` + `@theme { --color-green-brand: #2CA01C; ... }` in index.css. Use arbitrary values `bg-[#2CA01C]` in components (Tailwind v4 custom tokens work differently from v3).
+- **`isolatedModules`** — `import type { Response }` required in NestJS controller for express types.
+- **Static uploads** — receipt image path stored as full `./uploads/filename.jpg`; frontend accesses via `/uploads/filename.jpg` (proxied to backend).
+- **Duplicate detection** — fuzzy match: same merchant + amount ±$0.50 + date ±2 days.
+- **`userCorrected`** flag — set to `true` on confirm if user changed any AI-extracted field.
+- **TypeORM `synchronize: true`** in dev — mention migrations in prod.
+- **Gemini model** — `gemini-2.0-flash`, 3-attempt exponential backoff.
 
 ---
 
@@ -71,40 +80,36 @@
 # 1. Start Postgres
 docker-compose up -d
 
-# 2. Seed demo data
+# 2. Seed demo data (run once)
 cd server && npm run seed
 
-# 3. Start backend (http://localhost:3001/api)
+# 3. Start backend  http://localhost:3001/api
 npm run start:dev
 
-# 4. Start frontend (http://localhost:5173)
+# 4. Start frontend  http://localhost:5173
 cd ../client && npm run dev
 ```
 
-**Debug**: `npm run start:debug` in server → attach "Attach to NestJS" in VS Code.
-
 ---
 
-## NEXT: PHASE 3 — Frontend Core
+## NEXT: PHASE 4 — Dashboard & Analytics
 
-Branch: cut new feature branch from main after merging this one.
+Branch: cut new feature branch after merging current one.
 
-### Step 3.1 — App Shell & Routing
-- 4 pages: Dashboard, Expenses, Upload, Settings
-- Sidebar layout, React Router, active nav
-- QuickBooks-inspired: Intuit green `#2CA01C`, clean whites/grays
+### Backend (already done in Phase 1)
+- `GET /api/dashboard?month=YYYY-MM` returns full `DashboardSummaryDto`
 
-### Step 3.2 — API Client
-- `src/services/apiClient.ts` — axios with base URL, response unwrapping interceptor
-- `expenseService.ts`, `receiptService.ts`, `budgetService.ts`, `dashboardService.ts`
+### Frontend — `src/pages/Dashboard.tsx` (replace placeholder)
+- Month selector `← March 2026 →`
+- **Top row (4 summary cards)**: Total Spent, Expense Count, Top Category, MoM % Change (↑↓ colored arrow)
+- **Middle row**: Spend by Category (Recharts DonutChart) + Monthly Trend (AreaChart with gradient)
+- **Bottom row**: Top Merchants (horizontal BarChart) + Budget vs Actual (progress bars, yellow >80%, red >100%)
+- Click pie slice → navigate to `/expenses?category=X`
+- All charts animate on mount
 
-### Step 3.3 — Reusable UI Components
-- Button, Card, Input, Select, Badge, Modal, Spinner, Toast, EmptyState
-
-### Step 3.4 — Receipt Upload Page (hero feature)
-- Drag-and-drop zone with states: idle → hovering → uploading → processing → complete
-- Receipt Review Card: image preview + editable extracted fields + confidence badges
-- Duplicate warning modal
-
-### Step 3.5 — Expenses Page
-- Filterable table, sortable columns, expandable rows, edit/delete modals, pagination
+### New components needed
+- `src/components/dashboard/SpendByCategoryChart.tsx` — Recharts PieChart/Cell, custom legend
+- `src/components/dashboard/MonthlyTrendChart.tsx` — Recharts AreaChart, gradient fill, tooltip
+- `src/components/dashboard/TopMerchantsChart.tsx` — Recharts horizontal BarChart
+- `src/components/dashboard/BudgetProgressCard.tsx` — progress bars per category
+- `src/components/dashboard/SummaryCard.tsx` — stat card with icon + MoM change indicator
