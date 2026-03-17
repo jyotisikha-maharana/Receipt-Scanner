@@ -19,6 +19,30 @@
 
 ---
 
+## POST-PHASE 6 — Fixes & Additions (Complete)
+
+**AI Provider switched from Gemini → Groq:**
+- Gemini free tier was exhausted (limit: 0 per project/account)
+- Switched to Groq (`console.groq.com`) — free, 14,400 req/day, no credit card
+- Model: `meta-llama/llama-4-scout-17b-16e-instruct` (full vision support)
+- `GROQ_API_KEY` added to `server/.env` and `env.validation.ts`
+- `groq-sdk` installed with `--legacy-peer-deps`
+- `GeminiService` now uses Groq internally (class name kept for minimal diff)
+
+**Receipt image not showing in Expenses — fixed:**
+- Root cause: Windows multer stores path with backslashes (`uploads\file.jpg`)
+- Frontend `split('/')` returned the whole string instead of just the filename
+- Fix 1: Backend normalizes path on save — `imagePath.replace(/\\/g, '/')`
+- Fix 2: Frontend uses `split(/[\\/]/)` to handle both slash types (covers existing DB data)
+
+**Admin Reset API:**
+- `POST /api/admin/reset` — truncates `expenses` + `budgets` tables
+- `AdminModule` registered in `AppModule`
+- Bug fixed: budget table name is `budgets` not `budget`
+- UI: "Danger Zone" section in Settings page — two-step confirm before clearing
+
+---
+
 ## PHASE 6 — Polish & Interview Prep (Complete)
 
 **ErrorBoundary** (`src/components/ErrorBoundary.tsx`):
@@ -85,6 +109,9 @@
 - **react-is** — must be installed separately as peer dep of recharts (`npm install react-is`).
 - **Vite cache** — if recharts import fails after install, delete `node_modules/.vite` and restart.
 - **Seed clear** — use `repository.clear()` not `repository.delete({})` — TypeORM blocks empty criteria.
+- **Groq API** — get free key at `console.groq.com`. Gemini free tier is account-level exhausted.
+- **Windows paths** — multer saves with backslashes; normalize on save with `.replace(/\\/g, '/')`.
+- **groq-sdk install** — requires `--legacy-peer-deps` due to peer dep conflicts.
 
 ---
 

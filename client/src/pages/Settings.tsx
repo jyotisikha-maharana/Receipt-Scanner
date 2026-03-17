@@ -9,6 +9,7 @@ import { EmptyState } from '../components/ui/EmptyState';
 import { PageSpinner } from '../components/ui/Spinner';
 import { useToast } from '../context/ToastContext';
 import { budgetService } from '../services/budgetService';
+import { adminService } from '../services/adminService';
 import type { Budget } from '../types';
 import { ExpenseCategory } from '../types';
 import {
@@ -32,6 +33,8 @@ export function SettingsPage() {
   // New budget form
   const [form, setForm] = useState({ category: ExpenseCategory.FOOD, limit: '' });
   const [showForm, setShowForm] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const load = useCallback(async (m: string) => {
     setLoading(true);
@@ -77,6 +80,20 @@ export function SettingsPage() {
       load(month);
     } catch {
       toast.error('Failed to delete budget');
+    }
+  };
+
+  const handleReset = async () => {
+    setResetting(true);
+    try {
+      await adminService.resetData();
+      toast.success('All data cleared');
+      setShowResetConfirm(false);
+      load(month);
+    } catch {
+      toast.error('Failed to reset data');
+    } finally {
+      setResetting(false);
     }
   };
 
@@ -179,6 +196,29 @@ export function SettingsPage() {
           </div>
         )}
       </Card>
+
+      {/* Danger Zone */}
+      <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-5">
+        <h3 className="text-sm font-semibold text-red-700 mb-1">Danger Zone</h3>
+        <p className="text-sm text-red-600 mb-4">
+          Permanently deletes all expenses and budgets. This cannot be undone.
+        </p>
+        {!showResetConfirm ? (
+          <Button variant="danger" size="sm" onClick={() => setShowResetConfirm(true)}>
+            Clear All Data
+          </Button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium text-red-700">Are you sure?</span>
+            <Button variant="danger" size="sm" loading={resetting} onClick={handleReset}>
+              Yes, delete everything
+            </Button>
+            <Button variant="ghost" size="sm" onClick={() => setShowResetConfirm(false)}>
+              Cancel
+            </Button>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

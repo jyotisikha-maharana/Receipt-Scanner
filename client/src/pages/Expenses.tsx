@@ -227,10 +227,10 @@ export function ExpensesPage() {
                         {expense.receiptImagePath && (
                           <div
                             className="relative group cursor-pointer"
-                            onClick={() => setImagePreview(`/uploads/${expense.receiptImagePath!.split('/').pop()}`)}
+                            onClick={() => setImagePreview(`/uploads/${expense.receiptImagePath!.split(/[\\/]/).pop()}`)}
                           >
                             <img
-                              src={`/uploads/${expense.receiptImagePath.split('/').pop()}`}
+                              src={`/uploads/${expense.receiptImagePath.split(/[\\/]/).pop()}`}
                               alt="Receipt"
                               className="max-h-40 rounded-lg border border-gray-200 object-contain"
                             />

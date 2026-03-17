@@ -80,7 +80,7 @@ export class ExpenseService {
       currency: extraction.currency,
       category: extraction.category,
       date: extraction.date,
-      receiptImagePath: imagePath,
+      receiptImagePath: imagePath.replace(/\\/g, '/'),
       aiConfidence: extraction.confidence,
     });
   }

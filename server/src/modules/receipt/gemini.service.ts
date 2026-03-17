@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import { ReceiptExtractionDto } from './dto/receipt-extraction.dto';
 import { ExpenseCategory } from '../../common/enums/expense-category.enum';
 
@@ -28,14 +28,14 @@ If any field is unclear, use your best guess and lower the confidence score.`;
 @Injectable()
 export class GeminiService {
   private readonly logger = new Logger(GeminiService.name);
-  private genAI: GoogleGenerativeAI | null = null;
+  private groq: Groq | null = null;
 
   constructor(private readonly configService: ConfigService) {
-    const apiKey = configService.get<string>('GEMINI_API_KEY');
+    const apiKey = configService.get<string>('GROQ_API_KEY');
     if (apiKey) {
-      this.genAI = new GoogleGenerativeAI(apiKey);
+      this.groq = new Groq({ apiKey });
     } else {
-      this.logger.warn('GEMINI_API_KEY not set — AI extraction disabled');
+      this.logger.warn('GROQ_API_KEY not set — AI extraction disabled');
     }
   }
 
@@ -43,13 +43,11 @@ export class GeminiService {
     imageBuffer: Buffer,
     mimeType: string,
   ): Promise<ReceiptExtractionDto> {
-    if (!this.genAI) {
-      throw new Error('Gemini API key not configured');
+    if (!this.groq) {
+      throw new Error('GROQ_API_KEY not configured');
     }
 
-    const model = this.genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
     const base64Image = imageBuffer.toString('base64');
-
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < 3; attempt++) {
@@ -60,15 +58,29 @@ export class GeminiService {
           );
         }
 
-        const result = await model.generateContent([
-          EXTRACTION_PROMPT,
-          { inlineData: { data: base64Image, mimeType } },
-        ]);
+        const response = await this.groq.chat.completions.create({
+          model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+          messages: [
+            {
+              role: 'user',
+              content: [
+                { type: 'text', text: EXTRACTION_PROMPT },
+                {
+                  type: 'image_url',
+                  image_url: { url: `data:${mimeType};base64,${base64Image}` },
+                },
+              ],
+            },
+          ],
+          temperature: 0.1,
+        });
 
-        const text = result.response.text().trim();
-        // Strip markdown code fences if present
-        const jsonText = text.replace(/^```json\n?/, '').replace(/\n?```$/, '');
-        const parsed = JSON.parse(jsonText) as Record<string, unknown>;
+        const text = (response.choices[0].message.content ?? '').trim();
+        this.logger.debug(`Groq raw response: ${text}`);
+
+        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        if (!jsonMatch) throw new Error(`No JSON in response: ${text.slice(0, 200)}`);
+        const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
 
         const validCategories = Object.values(ExpenseCategory) as string[];
         const category = validCategories.includes(parsed['category'] as string)
@@ -90,7 +102,7 @@ export class GeminiService {
         };
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
-        this.logger.warn(`Gemini attempt ${attempt + 1} failed: ${lastError.message}`);
+        this.logger.warn(`Groq attempt ${attempt + 1} failed: ${lastError.message}`);
       }
     }
 

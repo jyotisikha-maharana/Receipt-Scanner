@@ -23,6 +23,10 @@ class EnvironmentVariables {
   GEMINI_API_KEY?: string;
 
   @IsOptional()
+  @IsString()
+  GROQ_API_KEY?: string;
+
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
   PORT?: number;
