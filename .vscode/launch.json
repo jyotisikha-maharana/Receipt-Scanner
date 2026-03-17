@@ -1,0 +1,28 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Attach to NestJS (start:debug)",
+      "type": "node",
+      "request": "attach",
+      "port": 9229,
+      "restart": true,
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/server/dist/**/*.js"],
+      "skipFiles": ["<node_internals>/**"]
+    },
+    {
+      "name": "Launch NestJS Server",
+      "type": "node",
+      "request": "launch",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start:debug"],
+      "cwd": "${workspaceFolder}/server",
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/server/dist/**/*.js"],
+      "console": "integratedTerminal",
+      "internalConsoleOptions": "neverOpen",
+      "skipFiles": ["<node_internals>/**"]
+    }
+  ]
+}
