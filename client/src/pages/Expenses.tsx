@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
-  Search, Download, Trash2, Edit2, ChevronDown, ChevronUp, Receipt
+  Search, Download, Trash2, Edit2, ChevronDown, ChevronUp, Receipt, ZoomIn
 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -25,13 +26,18 @@ const STATUS_OPTIONS = [
 
 export function ExpensesPage() {
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Expense | null>(null);
   const [editTarget, setEditTarget] = useState<Expense | null>(null);
-  const [filters, setFilters] = useState<ExpenseFilters>({ page: 1, limit: 20 });
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [filters, setFilters] = useState<ExpenseFilters>(() => {
+    const cat = searchParams.get('category') as ExpenseCategory | null;
+    return { page: 1, limit: 20, ...(cat ? { category: cat } : {}) };
+  });
   const [search, setSearch] = useState('');
 
   const load = useCallback(async (f: ExpenseFilters) => {
@@ -217,11 +223,19 @@ export function ExpensesPage() {
                           )}
                         </div>
                         {expense.receiptImagePath && (
-                          <img
-                            src={`/uploads/${expense.receiptImagePath.split('/').pop()}`}
-                            alt="Receipt"
-                            className="max-h-40 rounded-lg border border-gray-200 object-contain"
-                          />
+                          <div
+                            className="relative group cursor-pointer"
+                            onClick={() => setImagePreview(`/uploads/${expense.receiptImagePath!.split('/').pop()}`)}
+                          >
+                            <img
+                              src={`/uploads/${expense.receiptImagePath.split('/').pop()}`}
+                              alt="Receipt"
+                              className="max-h-40 rounded-lg border border-gray-200 object-contain"
+                            />
+                            <div className="absolute inset-0 flex items-center justify-center rounded-lg bg-black/0 group-hover:bg-black/20 transition-colors">
+                              <ZoomIn size={24} className="text-white opacity-0 group-hover:opacity-100 transition-opacity" />
+                            </div>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -281,6 +295,13 @@ export function ExpensesPage() {
           onSaved={() => { setEditTarget(null); load(filters); }}
         />
       )}
+
+      {/* Full-size receipt image viewer */}
+      <Modal open={!!imagePreview} onClose={() => setImagePreview(null)} title="Receipt Image" size="lg">
+        {imagePreview && (
+          <img src={imagePreview} alt="Receipt full size" className="w-full rounded-lg object-contain max-h-[70vh]" />
+        )}
+      </Modal>
     </div>
   );
 }

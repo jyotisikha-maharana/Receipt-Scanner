@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, FileImage, CheckCircle, AlertTriangle, X, Edit2 } from 'lucide-react';
 import { Header } from '../components/layout/Header';
 import { Card } from '../components/ui/Card';
@@ -11,7 +11,7 @@ import { Spinner } from '../components/ui/Spinner';
 import { useToast } from '../context/ToastContext';
 import { receiptService } from '../services/receiptService';
 import { expenseService } from '../services/expenseService';
-import type { ScanReceiptResponse } from '../types';
+import type { ScanReceiptResponse, Expense } from '../types';
 import { ExpenseCategory, ExpenseStatus } from '../types';
 import { formatCurrency, formatDate, CATEGORY_OPTIONS } from '../utils/formatters';
 
@@ -26,6 +26,17 @@ export function UploadPage() {
   const [scanResult, setScanResult] = useState<ScanReceiptResponse | null>(null);
   const [showDuplicateModal, setShowDuplicateModal] = useState(false);
   const [, setPendingFile] = useState<File | null>(null);
+
+  const [recentExpenses, setRecentExpenses] = useState<Expense[]>([]);
+
+  const loadRecent = useCallback(async () => {
+    try {
+      const res = await expenseService.getAll({ page: 1, limit: 3, status: ExpenseStatus.CONFIRMED });
+      setRecentExpenses(res.data);
+    } catch { /* non-critical */ }
+  }, []);
+
+  useEffect(() => { loadRecent(); }, [loadRecent]);
 
   // Editable form state (mirrors extracted data)
   const [form, setForm] = useState({
@@ -96,6 +107,7 @@ export function UploadPage() {
       });
       toast.success('Expense confirmed and saved!');
       setUploadState('done');
+      loadRecent();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to confirm expense');
     }
@@ -159,6 +171,26 @@ export function UploadPage() {
             {dragOver ? 'Drop your receipt here' : 'Drop receipt here or click to browse'}
           </p>
           <p className="text-sm text-gray-500">JPEG, PNG, WEBP, HEIC · Max 10MB</p>
+        </div>
+      )}
+
+      {uploadState === 'idle' && recentExpenses.length > 0 && (
+        <div className="mt-6">
+          <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">Recently Confirmed</p>
+          <div className="space-y-2">
+            {recentExpenses.map((exp) => (
+              <div key={exp.id} className="flex items-center justify-between px-4 py-3 bg-white rounded-lg border border-gray-200 text-sm">
+                <div className="flex items-center gap-3">
+                  <Badge category={exp.category} />
+                  <span className="font-medium text-gray-900">{exp.merchant}</span>
+                </div>
+                <div className="flex items-center gap-4 text-gray-500">
+                  <span>{formatDate(exp.date)}</span>
+                  <span className="font-semibold text-gray-900">{formatCurrency(exp.amount, exp.currency)}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
