@@ -19,8 +19,10 @@ import {
   currentMonth,
   CATEGORY_OPTIONS,
 } from '../utils/formatters';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export function SettingsPage() {
+  usePageTitle('Settings');
   const { toast } = useToast();
   const [month, setMonth] = useState(currentMonth());
   const [budgets, setBudgets] = useState<Budget[]>([]);

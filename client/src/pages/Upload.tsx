@@ -14,10 +14,12 @@ import { expenseService } from '../services/expenseService';
 import type { ScanReceiptResponse, Expense } from '../types';
 import { ExpenseCategory, ExpenseStatus } from '../types';
 import { formatCurrency, formatDate, CATEGORY_OPTIONS } from '../utils/formatters';
+import { usePageTitle } from '../hooks/usePageTitle';
 
-type UploadState = 'idle' | 'uploading' | 'review' | 'done';
+type UploadState = 'idle' | 'uploading' | 'review' | 'manual' | 'done';
 
 export function UploadPage() {
+  usePageTitle('Upload Receipt');
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [dragOver, setDragOver] = useState(false);
@@ -67,9 +69,9 @@ export function UploadPage() {
       }
       setUploadState('review');
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to scan receipt');
-      setUploadState('idle');
-      setPreview(null);
+      toast.error('AI scan failed — enter details manually');
+      console.error(err);
+      setUploadState('manual');
     }
   }, [toast]);
 
@@ -124,11 +126,36 @@ export function UploadPage() {
     }
   };
 
+  const handleManualSave = async () => {
+    const amount = parseFloat(form.amount);
+    if (!form.merchant || !form.amount || isNaN(amount) || !form.date) {
+      toast.error('Merchant, amount, and date are required');
+      return;
+    }
+    try {
+      await expenseService.create({
+        merchant: form.merchant,
+        amount,
+        currency: form.currency,
+        category: form.category,
+        date: form.date,
+        description: form.description || undefined,
+        status: ExpenseStatus.CONFIRMED,
+      });
+      toast.success('Expense saved manually!');
+      setUploadState('done');
+      loadRecent();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to save expense');
+    }
+  };
+
   const handleReset = () => {
     setUploadState('idle');
     setPreview(null);
     setScanResult(null);
     setPendingFile(null);
+    setForm({ merchant: '', amount: '', currency: 'USD', category: ExpenseCategory.OTHER, date: '', description: '' });
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
@@ -199,6 +226,32 @@ export function UploadPage() {
           <Spinner size={36} />
           <p className="mt-4 text-base font-medium text-gray-700">Analyzing receipt with AI...</p>
           <p className="text-sm text-gray-500 mt-1">Extracting merchant, amount, date, and category</p>
+        </Card>
+      )}
+
+      {uploadState === 'manual' && (
+        <Card className="max-w-lg mx-auto">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle size={18} className="text-yellow-500" />
+            <h3 className="text-base font-semibold text-gray-900">AI scan failed — enter details manually</h3>
+          </div>
+          {preview && (
+            <img src={preview} alt="Receipt" className="w-full max-h-48 object-contain rounded-lg border border-gray-200 mb-4" />
+          )}
+          <div className="space-y-4">
+            <Input label="Merchant *" value={form.merchant} onChange={(e) => setForm((f) => ({ ...f, merchant: e.target.value }))} />
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Amount *" type="number" step="0.01" value={form.amount} onChange={(e) => setForm((f) => ({ ...f, amount: e.target.value }))} />
+              <Input label="Currency" value={form.currency} onChange={(e) => setForm((f) => ({ ...f, currency: e.target.value }))} />
+            </div>
+            <Select label="Category" value={form.category} options={CATEGORY_OPTIONS} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value as ExpenseCategory }))} />
+            <Input label="Date *" type="date" value={form.date} onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))} />
+            <Input label="Description (optional)" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Add a note..." />
+          </div>
+          <div className="flex gap-3 mt-6">
+            <Button onClick={handleManualSave} className="flex-1"><CheckCircle size={15} /> Save Expense</Button>
+            <Button variant="ghost" onClick={handleReset}>Cancel</Button>
+          </div>
         </Card>
       )}
 

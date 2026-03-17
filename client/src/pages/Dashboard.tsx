@@ -9,8 +9,10 @@ import { BudgetProgressCard } from '../components/dashboard/BudgetProgressCard';
 import { dashboardService } from '../services/dashboardService';
 import { formatCurrency, formatMonth, prevMonth, nextMonth, currentMonth } from '../utils/formatters';
 import type { DashboardSummary } from '../types';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export function DashboardPage() {
+  usePageTitle('Dashboard');
   const [month, setMonth] = useState(currentMonth());
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);

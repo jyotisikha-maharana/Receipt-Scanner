@@ -11,87 +11,80 @@
 | Phase | Description | Status |
 |-------|-------------|--------|
 | 1 | Foundation & Infrastructure | ✅ Complete |
-| 2 | AI Receipt Scanning (Gemini) | ✅ Complete (backend) |
+| 2 | AI Receipt Scanning (Gemini) | ✅ Complete |
 | 3 | Frontend Core | ✅ Complete |
 | 4 | Dashboard & Analytics | ✅ Complete |
-| 5 | Advanced Features | ⬜ Not Started |
-| 6 | Polish & Interview Prep | ⬜ Not Started |
+| 5 | Advanced Features | ✅ Complete |
+| 6 | Polish & Interview Prep | ✅ Complete |
+
+---
+
+## PHASE 6 — Polish & Interview Prep (Complete)
+
+**ErrorBoundary** (`src/components/ErrorBoundary.tsx`):
+- Class component wrapping entire app in `main.tsx`
+- Friendly fallback: icon + message + "Refresh Page" button
+- Logs errors to console for debugging
+
+**usePageTitle hook** (`src/hooks/usePageTitle.ts`):
+- Sets `document.title` to `"<Page> | SmartReceipt"` on mount, resets on unmount
+- Added to Dashboard, Expenses, Upload, Settings pages
+
+**Gemini Fallback** (Upload.tsx):
+- New `'manual'` upload state — triggered when AI scan throws
+- Shows receipt preview + empty form fields (merchant, amount, currency, category, date, description)
+- Calls `expenseService.create(...)` directly, confirms expense, refreshes recent list
+- No dead ends in demo — AI failure gracefully degrades to manual entry
+
+**index.html**: title changed from `"client"` to `"SmartReceipt"`
+
+**Seed script fixed** (`server/src/database/seeds/seed.ts`):
+- Replaced `delete({})` with `repository.clear()` (TypeORM requires explicit criteria for delete)
+- `npm run seed` → 60 expenses across Jan/Feb/Mar 2026 + 8 budgets (some near/over limit)
+- Budgets set intentionally tight so dashboard shows yellow/red progress bars
+
+**README.md** — full setup guide, feature list, architecture overview, API table, AI usage
+
+---
+
+## PHASE 5 — Advanced Features (Complete)
+
+- **Settings.tsx** — budget management: month selector, add/delete budgets per category, inline form
+- **Expenses.tsx** — `?category=X` URL deep-link + full-size receipt image viewer (zoom hover → Modal)
+- **Upload.tsx** — idle state shows last 3 confirmed expenses; refreshes after new confirmation
 
 ---
 
 ## PHASE 4 — Dashboard & Analytics (Complete)
 
-### All components created, TypeScript compiles clean (0 errors)
-
-**Dashboard components (`src/components/dashboard/`):**
-- `SummaryCard.tsx` — stat card with icon + MoM ↑↓ colored indicator (red = increase, green = decrease in spend)
-- `SpendByCategoryChart.tsx` — Recharts donut (PieChart + Cell), custom colors per category, click slice → `/expenses?category=X`
-- `MonthlyTrendChart.tsx` — Recharts AreaChart with green gradient fill, animated
-- `TopMerchantsChart.tsx` — Recharts horizontal BarChart, top 5 merchants
-- `BudgetProgressCard.tsx` — progress bars per category; yellow >80%, red >100%, "Over budget" label
-
-**Page: `src/pages/Dashboard.tsx`** (replaced placeholder):
-- Month selector `← March 2026 →` (blocks future months)
-- Row 1: 4 SummaryCards (Total Spent, Expense Count, Top Category, MoM Change)
-- Row 2: SpendByCategoryChart + MonthlyTrendChart
-- Row 3: TopMerchantsChart + BudgetProgressCard
-- Loading state (PageSpinner), error state, all charts animate on mount
+- `SummaryCard`, `SpendByCategoryChart` (donut → navigates to `/expenses?category=X`), `MonthlyTrendChart` (area + gradient), `TopMerchantsChart` (horizontal bar), `BudgetProgressCard` (yellow >80%, red >100%)
+- Dashboard.tsx: month selector, 3-row layout, all charts animate on mount
 
 ---
 
 ## PHASE 3 — Frontend Core (Complete)
 
-### All client files created, TypeScript compiles clean (0 errors)
-
-**Types:** `src/types/index.ts` — Expense, Budget, DashboardSummary, enums, PaginatedResponse, ExpenseFilters
-
-**Services:**
-- `apiClient.ts` — axios, base URL `/api`, unwraps `{ success, data }` envelope, normalizes errors
-- `expenseService.ts` — getAll (with filters), getOne, create, update, remove, checkDuplicate, exportCsv
-- `receiptService.ts` — scan (multipart POST)
-- `budgetService.ts` — getAll, upsert, remove
-- `dashboardService.ts` — getSummary
-
-**Context:** `ToastContext.tsx` — global toast state, 4-second auto-dismiss, `useToast()` hook
-
-**UI Primitives (`components/ui/`):**
-- `Button` — primary/secondary/danger/ghost variants, sm/md/lg sizes, loading spinner
-- `Card`, `CardHeader`, `CardTitle`
-- `Input` — label, error, helperText
-- `Select` — label, error, options array
-- `Badge` — category (colored) + status variants; `ConfidenceBadge` (green/yellow/red %)
-- `Modal` — Escape key, scroll-lock, size variants
-- `Spinner`, `PageSpinner`, `SkeletonRow`
-- `ToastContainer` — renders active toasts bottom-right
-- `EmptyState` — icon + title + optional CTA
-
-**Layout (`components/layout/`):**
-- `Sidebar` — NavLink active states, Intuit green `#2CA01C`, SmartReceipt logo
-- `Header` — title, subtitle, actions slot
-- `AppShell` — Sidebar + Outlet + ToastContainer
-
-**Utils:** `formatters.ts` — formatCurrency, formatDate, formatMonth, prevMonth, nextMonth, currentMonth, CATEGORY_OPTIONS
-
-**Pages:**
-- `Upload.tsx` — **hero feature**: drag-drop zone → AI scan → review card (editable fields + confidence badges) → confirm/reject → duplicate warning modal
-- `Expenses.tsx` — filterable/searchable table, expandable rows (receipt image + AI confidence), edit modal, delete confirmation, CSV export, pagination
-- `Settings.tsx` — placeholder (Phase 5)
-
-**App.tsx** — BrowserRouter + ToastProvider + 4 routes under AppShell
+- Services: apiClient (axios), expenseService, receiptService, budgetService, dashboardService
+- UI Primitives: Button, Card, Input, Select, Badge, ConfidenceBadge, Modal, Spinner, EmptyState, Toast
+- Layout: AppShell, Sidebar (Intuit green `#2CA01C`), Header
+- Pages: Upload (full AI flow), Expenses (filterable table + edit/delete), Dashboard (placeholder → Phase 4), Settings (placeholder → Phase 5)
 
 ---
 
 ## KEY DECISIONS & NOTES
 
-- **Tailwind v4** — `@import "tailwindcss"` + `@theme { --color-green-brand: #2CA01C; ... }` in index.css. Use arbitrary values `bg-[#2CA01C]` in components (Tailwind v4 custom tokens work differently from v3).
+- **Tailwind v4** — use arbitrary values `bg-[#2CA01C]` in components.
 - **`isolatedModules`** — `import type { Response }` required in NestJS controller for express types.
-- **Static uploads** — receipt image path stored as full `./uploads/filename.jpg`; frontend accesses via `/uploads/filename.jpg` (proxied to backend).
+- **Static uploads** — receipt image path stored as `./uploads/filename.jpg`; frontend accesses via `/uploads/filename.jpg` (proxied).
 - **Duplicate detection** — fuzzy match: same merchant + amount ±$0.50 + date ±2 days.
 - **`userCorrected`** flag — set to `true` on confirm if user changed any AI-extracted field.
 - **TypeORM `synchronize: true`** in dev — mention migrations in prod.
 - **Gemini model** — `gemini-2.0-flash`, 3-attempt exponential backoff.
 - **server/.env** — NestJS reads `.env` from `server/` directory, not project root.
-- **Docker** — use `docker compose` (space), not `docker-compose`. postgres + pgadmin on ports 5432 + 5050.
+- **Docker** — use `docker compose` (space, not hyphen). postgres + pgadmin on ports 5432 + 5050.
+- **react-is** — must be installed separately as peer dep of recharts (`npm install react-is`).
+- **Vite cache** — if recharts import fails after install, delete `node_modules/.vite` and restart.
+- **Seed clear** — use `repository.clear()` not `repository.delete({})` — TypeORM blocks empty criteria.
 
 ---
 
@@ -113,29 +106,16 @@ cd ../client && npm run dev
 
 ---
 
-## NEXT: PHASE 5 — Advanced Features
+## PROJECT COMPLETE — INTERVIEW TALKING POINTS
 
-Branch: `feature/advanced-features` (cut after merging `feature/dashboard-analytics`)
+**"Walk me through the project":**
+> "SmartReceipt helps freelancers track expenses. You photograph a receipt, Gemini AI reads it automatically, and you get a dashboard showing where your money goes — like a simplified QuickBooks."
 
-### 5.1 — Budget Management Page (`src/pages/Settings.tsx` → replace placeholder)
-- List all budgets grouped by month
-- Add/edit/delete budget per category per month
-- Inline form: category dropdown + monthly limit input
-- Call `budgetService.upsert` / `budgetService.remove`
+**"Explain the architecture":**
+> "NestJS enforces modular architecture — each feature (expenses, receipts, budgets) is its own module with a controller, service, and repository. Dependencies are injected, not hard-coded. TypeORM handles database access through the repository pattern, and all input is validated through DTOs with class-validator. Global exception filter normalizes all errors; a transform interceptor wraps every response in `{ success, data }`."
 
-### 5.2 — Expense Filters Deep-link
-- `Expenses.tsx` reads `?category=X` from URL on mount → pre-fills category filter
-- Enables the dashboard donut click-through to work correctly
+**"Where did you use AI?":**
+> "Two places — Gemini Flash extracts structured data from receipt images, and I used Claude to help build the project. I modified the duplicate detection logic myself because the initial fuzzy matching had edge cases. I also adjusted the Gemini prompt to improve extraction accuracy and added a manual fallback when the AI fails."
 
-### 5.3 — Receipt Image Viewer
-- In expanded expense row, clicking the receipt thumbnail opens it full-size in the Modal
-- Backend already serves `/uploads/:filename` as static files
-
-### 5.4 — Empty / Error States Polish
-- Upload page: show last 3 confirmed expenses below the upload zone
-- Expenses page: EmptyState with CTA to Upload when no results
-- Dashboard: "No expenses this month" zero-state with CTA
-
-### 5.5 — Seed Script Verification
-- Run `npm run seed` and confirm 50+ expenses load correctly across 3 months
-- Verify dashboard charts render with real data
+**"What would you change with more time?":**
+> "Add authentication with Passport.js, use TypeORM migrations instead of synchronize for production, add unit and e2e tests, deploy with Docker to AWS, and build a feedback loop where user corrections improve AI categorization."

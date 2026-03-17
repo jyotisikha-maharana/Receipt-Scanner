@@ -17,6 +17,7 @@ import { expenseService } from '../services/expenseService';
 import type { Expense, ExpenseFilters } from '../types';
 import { ExpenseCategory, ExpenseStatus } from '../types';
 import { formatCurrency, formatDate, CATEGORY_OPTIONS } from '../utils/formatters';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const STATUS_OPTIONS = [
   { value: ExpenseStatus.PENDING, label: 'Pending' },
@@ -25,6 +26,7 @@ const STATUS_OPTIONS = [
 ];
 
 export function ExpensesPage() {
+  usePageTitle('Expenses');
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
   const [expenses, setExpenses] = useState<Expense[]>([]);

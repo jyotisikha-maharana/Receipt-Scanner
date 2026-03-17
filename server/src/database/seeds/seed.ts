@@ -55,8 +55,8 @@ async function seed() {
   await dataSource.initialize();
   console.log('✅ Connected to database');
 
-  await dataSource.getRepository(Expense).delete({});
-  await dataSource.getRepository(Budget).delete({});
+  await dataSource.getRepository(Budget).clear();
+  await dataSource.getRepository(Expense).clear();
   console.log('🗑  Cleared existing data');
 
   const categories = Object.values(ExpenseCategory);
