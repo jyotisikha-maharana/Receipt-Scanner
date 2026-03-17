@@ -13,9 +13,29 @@
 | 1 | Foundation & Infrastructure | ✅ Complete |
 | 2 | AI Receipt Scanning (Gemini) | ✅ Complete (backend) |
 | 3 | Frontend Core | ✅ Complete |
-| 4 | Dashboard & Analytics | ⬜ Not Started |
+| 4 | Dashboard & Analytics | ✅ Complete |
 | 5 | Advanced Features | ⬜ Not Started |
 | 6 | Polish & Interview Prep | ⬜ Not Started |
+
+---
+
+## PHASE 4 — Dashboard & Analytics (Complete)
+
+### All components created, TypeScript compiles clean (0 errors)
+
+**Dashboard components (`src/components/dashboard/`):**
+- `SummaryCard.tsx` — stat card with icon + MoM ↑↓ colored indicator (red = increase, green = decrease in spend)
+- `SpendByCategoryChart.tsx` — Recharts donut (PieChart + Cell), custom colors per category, click slice → `/expenses?category=X`
+- `MonthlyTrendChart.tsx` — Recharts AreaChart with green gradient fill, animated
+- `TopMerchantsChart.tsx` — Recharts horizontal BarChart, top 5 merchants
+- `BudgetProgressCard.tsx` — progress bars per category; yellow >80%, red >100%, "Over budget" label
+
+**Page: `src/pages/Dashboard.tsx`** (replaced placeholder):
+- Month selector `← March 2026 →` (blocks future months)
+- Row 1: 4 SummaryCards (Total Spent, Expense Count, Top Category, MoM Change)
+- Row 2: SpendByCategoryChart + MonthlyTrendChart
+- Row 3: TopMerchantsChart + BudgetProgressCard
+- Loading state (PageSpinner), error state, all charts animate on mount
 
 ---
 
@@ -53,10 +73,9 @@
 **Utils:** `formatters.ts` — formatCurrency, formatDate, formatMonth, prevMonth, nextMonth, currentMonth, CATEGORY_OPTIONS
 
 **Pages:**
-- `Dashboard.tsx` — placeholder (Phase 4)
-- `Settings.tsx` — placeholder (Phase 5)
-- `Upload.tsx` — **full hero feature**: drag-drop zone → AI scan → review card (editable fields + confidence badges) → confirm/reject → duplicate warning modal
+- `Upload.tsx` — **hero feature**: drag-drop zone → AI scan → review card (editable fields + confidence badges) → confirm/reject → duplicate warning modal
 - `Expenses.tsx` — filterable/searchable table, expandable rows (receipt image + AI confidence), edit modal, delete confirmation, CSV export, pagination
+- `Settings.tsx` — placeholder (Phase 5)
 
 **App.tsx** — BrowserRouter + ToastProvider + 4 routes under AppShell
 
@@ -71,6 +90,8 @@
 - **`userCorrected`** flag — set to `true` on confirm if user changed any AI-extracted field.
 - **TypeORM `synchronize: true`** in dev — mention migrations in prod.
 - **Gemini model** — `gemini-2.0-flash`, 3-attempt exponential backoff.
+- **server/.env** — NestJS reads `.env` from `server/` directory, not project root.
+- **Docker** — use `docker compose` (space), not `docker-compose`. postgres + pgadmin on ports 5432 + 5050.
 
 ---
 
@@ -78,7 +99,7 @@
 
 ```bash
 # 1. Start Postgres
-docker-compose up -d
+docker compose up -d
 
 # 2. Seed demo data (run once)
 cd server && npm run seed
@@ -92,24 +113,29 @@ cd ../client && npm run dev
 
 ---
 
-## NEXT: PHASE 4 — Dashboard & Analytics
+## NEXT: PHASE 5 — Advanced Features
 
-Branch: cut new feature branch after merging current one.
+Branch: `feature/advanced-features` (cut after merging `feature/dashboard-analytics`)
 
-### Backend (already done in Phase 1)
-- `GET /api/dashboard?month=YYYY-MM` returns full `DashboardSummaryDto`
+### 5.1 — Budget Management Page (`src/pages/Settings.tsx` → replace placeholder)
+- List all budgets grouped by month
+- Add/edit/delete budget per category per month
+- Inline form: category dropdown + monthly limit input
+- Call `budgetService.upsert` / `budgetService.remove`
 
-### Frontend — `src/pages/Dashboard.tsx` (replace placeholder)
-- Month selector `← March 2026 →`
-- **Top row (4 summary cards)**: Total Spent, Expense Count, Top Category, MoM % Change (↑↓ colored arrow)
-- **Middle row**: Spend by Category (Recharts DonutChart) + Monthly Trend (AreaChart with gradient)
-- **Bottom row**: Top Merchants (horizontal BarChart) + Budget vs Actual (progress bars, yellow >80%, red >100%)
-- Click pie slice → navigate to `/expenses?category=X`
-- All charts animate on mount
+### 5.2 — Expense Filters Deep-link
+- `Expenses.tsx` reads `?category=X` from URL on mount → pre-fills category filter
+- Enables the dashboard donut click-through to work correctly
 
-### New components needed
-- `src/components/dashboard/SpendByCategoryChart.tsx` — Recharts PieChart/Cell, custom legend
-- `src/components/dashboard/MonthlyTrendChart.tsx` — Recharts AreaChart, gradient fill, tooltip
-- `src/components/dashboard/TopMerchantsChart.tsx` — Recharts horizontal BarChart
-- `src/components/dashboard/BudgetProgressCard.tsx` — progress bars per category
-- `src/components/dashboard/SummaryCard.tsx` — stat card with icon + MoM change indicator
+### 5.3 — Receipt Image Viewer
+- In expanded expense row, clicking the receipt thumbnail opens it full-size in the Modal
+- Backend already serves `/uploads/:filename` as static files
+
+### 5.4 — Empty / Error States Polish
+- Upload page: show last 3 confirmed expenses below the upload zone
+- Expenses page: EmptyState with CTA to Upload when no results
+- Dashboard: "No expenses this month" zero-state with CTA
+
+### 5.5 — Seed Script Verification
+- Run `npm run seed` and confirm 50+ expenses load correctly across 3 months
+- Verify dashboard charts render with real data
