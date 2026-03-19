@@ -2,29 +2,40 @@ import { IsString, IsNumber, IsOptional, validateSync } from 'class-validator';
 import { plainToClass, Type } from 'class-transformer';
 
 class EnvironmentVariables {
+  // Local dev DB (individual vars)
+  @IsOptional()
   @IsString()
-  DB_HOST: string;
+  DB_HOST?: string;
 
+  @IsOptional()
   @IsNumber()
   @Type(() => Number)
-  DB_PORT: number;
-
-  @IsString()
-  DB_USERNAME: string;
-
-  @IsString()
-  DB_PASSWORD: string;
-
-  @IsString()
-  DB_NAME: string;
+  DB_PORT?: number;
 
   @IsOptional()
   @IsString()
-  GEMINI_API_KEY?: string;
+  DB_USERNAME?: string;
+
+  @IsOptional()
+  @IsString()
+  DB_PASSWORD?: string;
+
+  @IsOptional()
+  @IsString()
+  DB_NAME?: string;
+
+  // Production DB (Neon connection string)
+  @IsOptional()
+  @IsString()
+  DATABASE_URL?: string;
 
   @IsOptional()
   @IsString()
   GROQ_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  GEMINI_API_KEY?: string;
 
   @IsOptional()
   @IsNumber()
@@ -38,6 +49,10 @@ class EnvironmentVariables {
   @IsOptional()
   @IsString()
   NODE_ENV?: string;
+
+  @IsOptional()
+  @IsString()
+  CORS_ORIGIN?: string;
 }
 
 export function validateEnv(config: Record<string, unknown>) {
