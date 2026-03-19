@@ -31,7 +31,7 @@ export function MonthlyTrendChart({ data }: Props) {
             <CartesianGrid strokeDasharray="3 3" stroke="#F3F4F6" />
             <XAxis dataKey="label" tick={{ fontSize: 12 }} />
             <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} width={55} />
-            <Tooltip formatter={(v: number) => [`$${v.toFixed(2)}`, 'Total Spent']} />
+            <Tooltip formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Total Spent']} />
             <Area
               type="monotone"
               dataKey="amount"

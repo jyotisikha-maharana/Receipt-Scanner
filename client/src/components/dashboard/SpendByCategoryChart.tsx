@@ -41,7 +41,10 @@ export function SpendByCategoryChart({ data }: Props) {
               outerRadius={90}
               paddingAngle={3}
               dataKey="amount"
-              onClick={(entry: { category?: string }) => entry.category && navigate(`/expenses?category=${entry.category}`)}
+              onClick={(entry) => {
+                const cat = (entry as unknown as { category?: string }).category;
+                cat && navigate(`/expenses?category=${cat}`);
+              }}
               style={{ cursor: 'pointer' }}
             >
               {formatted.map((entry) => (
