@@ -41,14 +41,14 @@ export function SpendByCategoryChart({ data }: Props) {
               outerRadius={90}
               paddingAngle={3}
               dataKey="amount"
-              onClick={(entry) => navigate(`/expenses?category=${entry.category}`)}
+              onClick={(entry: { category?: string }) => entry.category && navigate(`/expenses?category=${entry.category}`)}
               style={{ cursor: 'pointer' }}
             >
               {formatted.map((entry) => (
                 <Cell key={entry.category} fill={entry.fill} />
               ))}
             </Pie>
-            <Tooltip formatter={(v: number) => [`$${v.toFixed(2)}`, 'Spent']} />
+            <Tooltip formatter={(v) => [`$${Number(v).toFixed(2)}`, 'Spent']} />
             <Legend iconType="circle" iconSize={8} />
           </PieChart>
         </ResponsiveContainer>

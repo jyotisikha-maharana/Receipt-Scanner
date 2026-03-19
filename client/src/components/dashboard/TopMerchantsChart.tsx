@@ -29,8 +29,8 @@ export function TopMerchantsChart({ data }: Props) {
             <XAxis type="number" tick={{ fontSize: 12 }} tickFormatter={(v) => `$${v}`} />
             <YAxis type="category" dataKey="label" tick={{ fontSize: 12 }} width={90} />
             <Tooltip
-              formatter={(v: number, _n, props) => [
-                `$${v.toFixed(2)} (${props.payload?.count} receipts)`,
+              formatter={(v, _n, props) => [
+                `$${Number(v).toFixed(2)} (${(props.payload as { count?: number })?.count ?? 0} receipts)`,
                 'Total',
               ]}
             />
